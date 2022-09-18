@@ -28,7 +28,7 @@ TCGA-NSCLC and TCGA-RCC are public available datasets for non-small-cell lung ca
 The key to BCL is to introduce an auxiliary patch classifier to improve the MIL classifier collaboratively. Here we further visualize some representative results to show this point intuitively. More precisely, we choose two exemplary WSIs (named “test 021” and “test 122”) from CAMEL YON16 for visualization. We depict the MIL-classifier heat maps obtained by BCL at the first and last iteration steps and also by other methods and the patch-classifier heat maps obtained by BCL at various iteration steps. For the learned patch classifier, we also visualize its Class
 Activation Maps (CAMs) generated over some patches selected from these two WSIs.  
 
-<img src="https://github.com/Zero-We/BCL/blob/main/docs/attn-map.png" width="700px">
+<img src="https://github.com/Zero-We/BCL/blob/main/docs/attn-map.png" width="900px">
 
 
 ## Reference  
