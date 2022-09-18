@@ -32,4 +32,4 @@ Activation Maps (CAMs) generated over some patches selected from these two WSIs.
 
 
 ## Reference  
-If you find our work useful in your research or if you use parts of this code please consider citing our paper.
+If you find our work useful in your research or if you use parts of this code please consider citing our paper.  
