@@ -10,7 +10,7 @@ basic idea of BCL is to introduce an auxiliary patch classifier, along with the 
 aware pseudo labeling approach is further proposed. Our BCL is extensively evaluated on three publicly available WSI datasets, i.e., CAMELYON16, TCGA-NSCLC and TCGA-RCC, achieving an AUC of 95.6%, 96.0% and 97.5% respectively, which consistently outperforms all the compared MIL methods. Comprehensive analysis and discussion will also be presented for in-depth understanding of the proposed BCL.
 
 ## Model
-The trained model weights and are provided here （[Google Drive](https://drive.google.com/drive/folders/1-Sk11nAC2XkGoy3LcDpoJZ7-GPpRAQBx?usp=sharing) | [Baidu Cloud](https://pan.baidu.com/s/1eANWunCUlvB7zzQPjX1oMw) (bclm)）. You can download these files and drag `bcl_model.pth` and  to  the `model` directory.
+The trained model weights and are provided here （[Google Drive](https://drive.google.com/drive/folders/1-Sk11nAC2XkGoy3LcDpoJZ7-GPpRAQBx?usp=sharing) | [Baidu Cloud](https://pan.baidu.com/s/1eANWunCUlvB7zzQPjX1oMw) (bclm)）. You can download these files and drag `bcl_model.pth` and  to  the `result` directory.
 
 ## Dataset
 * **Camelyon16**  
