@@ -33,7 +33,7 @@ parser.add_argument('--label_csv', type=str, default=None)
 parser.add_argument('--round', type=int, default=0)
 parser.add_argument('--is_test', default=False, action='store_true')
 parser.add_argument('--load_model', default=False, action='store_true')
-parser.add_argument('--bcl_model', type=str, default='result/Camelyon/bcl_model.pth', help='path to pretrained model')
+parser.add_argument('--bcl_model', type=str, default='result/CAMELYON/bcl_model.pth', help='path to pretrained model')
 
 
 args = parser.parse_args()
