@@ -31,6 +31,9 @@ parser.add_argument('--encoding_size', type=int, default=1024)
 parser.add_argument('--device', type=int, default=0)
 parser.add_argument('--label_csv', type=str, default=None)
 parser.add_argument('--round', type=int, default=0)
+parser.add_argument('--is_test', default=False, action='store_true')
+parser.add_argument('--load_model', default=False, action='store_true')
+parser.add_argument('--bcl_model', type=str, default='result/Camelyon/bcl_model.pth', help='path to pretrained model')
 
 
 args = parser.parse_args()
@@ -231,20 +234,24 @@ if __name__ == '__main__':
 
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10, verbose=True)
         best_acc = 0
-
-        model_path = os.path.join(model_save_dir, f't{args.round}_primary.pth')
+        
+        if args.load_model:
+            model_path = args.bcl_model
+        else:
+            model_path = os.path.join(model_save_dir, f't{args.round}_primary.pth')
         early_stopping = EarlyStopping(model_path=model_path, patience=10, verbose=True)
 
-        ## training the MIL classifier
-        for epoch in range(args.epochs):
-            train_attns = train_epoch(epoch, model, optimizer, trainloader, criterion)
-            valid_loss, val_auc, val_attns = prediction(model, valloader, criterion)
+        if not args.is_test:
+            ## training the MIL classifier
+            for epoch in range(args.epochs):
+                train_attns = train_epoch(epoch, model, optimizer, trainloader, criterion)
+                valid_loss, val_auc, val_attns = prediction(model, valloader, criterion)
 
-            early_stopping(epoch, valid_loss, best_acc, model)
-            if early_stopping.early_stop:
-                print('Early Stopping')
-                break
-            print('\r')
+                early_stopping(epoch, valid_loss, best_acc, model)
+                if early_stopping.early_stop:
+                    print('Early Stopping')
+                    break
+                print('\r')
 
 
         trainloader = DataLoader(train_dset, batch_size=1, shuffle=False, num_workers=4)
@@ -255,25 +262,26 @@ if __name__ == '__main__':
         _, _, train_attns = prediction(model, trainloader, criterion, testing=True)
         _, _, val_attns = prediction(model, valloader, criterion, testing=True)
 
-        if args.round == 0:
-            test_preds, train_preds, val_preds = None, None, None
-        else:
-            model = BAL_A(n_classes=2, input_dim=args.encoding_size).cuda()
-            model.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
-            test_preds = patch_prediction(model, testloader, criterion, testing=True)
-            train_preds = patch_prediction(model, trainloader, criterion, testing=True)
-            val_preds = patch_prediction(model, valloader, criterion, testing=True)
+        if not args.is_test:
+            if args.round == 0:
+                test_preds, train_preds, val_preds = None, None, None
+            else:
+                model = BAL_A(n_classes=2, input_dim=args.encoding_size).cuda()
+                model.load_state_dict(torch.load(model_path, map_location='cpu'), strict=False)
+                test_preds = patch_prediction(model, testloader, criterion, testing=True)
+                train_preds = patch_prediction(model, trainloader, criterion, testing=True)
+                val_preds = patch_prediction(model, valloader, criterion, testing=True)
 
-        obj = {
-            'train_attns': train_attns,
-            'train_preds': train_preds,
-            'val_attns': val_attns,
-            'val_preds': val_preds,
-            'test_attns': test_attns,
-            'test_preds': test_preds
-        }
-        with open(os.path.join(model_save_dir, f't{args.round+1}_primary_attn.pkl'), 'wb') as f:
-            pickle.dump(obj, f)
+            obj = {
+                'train_attns': train_attns,
+                'train_preds': train_preds,
+                'val_attns': val_attns,
+                'val_preds': val_preds,
+                'test_attns': test_attns,
+                'test_preds': test_preds
+            }
+            with open(os.path.join(model_save_dir, f't{args.round+1}_primary_attn.pkl'), 'wb') as f:
+                pickle.dump(obj, f)
 
         print('Fold: %d => ACC: %f' % (k, test_acc))
         test_accs.append(test_acc)
