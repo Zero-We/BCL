@@ -21,7 +21,35 @@ Download from [here](https://camelyon17.grand-challenge.org/Data/).
 * **TCGA**  
 TCGA-NSCLC and TCGA-RCC are public available datasets for non-small-cell lung carcinoma(NSCLC) subtyping and renal cell carcinoma(RCC) subtyping respectively. They can be download from [here](https://portal.gdc.cancer.gov/)   
 
-## Evaluation
+## Training  
+Datasets are preprocessed according to [CLAM](https://github.com/mahmoodlab/CLAM), which extracts 256x256 patches from each WSI and converts them into 1024-dimensional feature vectors. All patch features are saved in `.pt` format, and coordinates of each patch are also stored in the directory.  
+
+The feature encoder is initialized by using ResNet50 backbone pretrained on ImageNet, the MIL classifier is initialized by training Attention-based MIL, which provides attention weight of each patch for pseudo labeling and start iterations. So, you can initialize the BCL model by setting `args.round=0` and running the following command:  
+~~~
+python M2_update_MIL_classifier.py --round 0 --results_dir result/CAMELYON
+~~~  
+
+Then initialized model and attention weights will be stored in `result/CAMELYON` directory, you can continue to assign pseudo labels and start EM iterations by following:  
+~~~
+python E_pseudo_labeling.py --round 1 --results_dir result/CAMELYON
+~~~  
+
+You can retrain the feature extractor and patch classifier with pseudo labels:  
+~~~
+python M1_update_feat_encoder.py --round 1 --results_dir result/CAMELYON
+~~~  
+
+After all above, you have updated the patch-level feature extractor once. By running `extract_feature_clean.py`, all patch features will be updated. So, you can retrained the MIL classifier with updated patch features:  
+~~~
+python M2_update_MIL_classifier.py --results_dir result/CAMELYON --round 1
+~~~  
+Until this step, one round of EM iteration has completed. Continue to iterate until the model converges.
+
+## Evaluation  
+You can test the performance of BCL on Camelyon16 dataset by following code after draging the pretrained weights of model `bcl_model.pth` to the `result/CAMELYON` directory:  
+~~~
+python M2_update_MIL_classifier.py --is_test --load_model
+~~~  
 
 
 ## Visualization
