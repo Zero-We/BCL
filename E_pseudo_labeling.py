@@ -29,7 +29,7 @@ def prepare_data(df):
 model_save_dir = args.results_dir
 if not os.path.exists(model_save_dir):
     os.makedirs(model_save_dir)
-with open(os.path.join(model_save_dir, f't{round}_primary_attn.pkl'), 'rb') as f:
+with open(os.path.join(model_save_dir, f't{args.round}_primary_attn.pkl'), 'rb') as f:
     obj = pickle.load(f)
 train_attns = obj['train_attns']
 train_preds = obj['train_preds']
@@ -58,7 +58,7 @@ for img_id, attn in train_attns.items():
 
     ## bal
     if args.round == 1:
-        attn = torch.from_numpy(attn[:, target])
+        attn = torch.from_numpy(attn).squeeze(0)
         score = attn
     else:
         attn = torch.from_numpy(attn).squeeze(0)
@@ -111,7 +111,7 @@ for img_id, attn in val_attns.items():
         target = 0
 
     if args.round == 1:
-        attn = torch.from_numpy(attn[:, target])
+        attn = torch.from_numpy(attn).squeeze(0)
         score = attn
     else:
         attn = torch.from_numpy(attn).squeeze(0)
