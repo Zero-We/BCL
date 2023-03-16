@@ -115,7 +115,7 @@ for img_id, attn in val_attns.items():
         score = attn
     else:
         attn = torch.from_numpy(attn).squeeze(0)
-        preds = torch.from_numpy(train_preds[img_id])
+        preds = torch.from_numpy(val_preds[img_id])
         preds = torch.transpose(preds, 1, 0)
         preds = preds[target]
         attn = (attn - torch.min(attn)) / (torch.max(attn) - torch.min(attn))
