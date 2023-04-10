@@ -46,7 +46,8 @@ python M2_update_MIL_classifier.py --results_dir result/CAMELYON --round 1
 Until this step, one round of EM iteration has completed. Continue to iterate until the model converges.
 
 ## Evaluation  
-You can test the performance of BCL on Camelyon16 dataset by following code after draging the pretrained weights of model `bcl_model.pth` to the `result/CAMELYON` directory:  
+First, you should drag pretrained weights of the feature encoder `t4_feature_extractor.pth` to the `result/CAMELYON` directory, and extract the patch features by running `extract_feature_clean.py` with that.  
+Then You can test the performance of BCL on Camelyon16 dataset by following code after draging the pretrained weights of model `bcl_model.pth` to the `result/CAMELYON` directory:  
 ~~~
 python M2_update_MIL_classifier.py --is_test --load_model
 ~~~  
