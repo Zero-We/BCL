@@ -10,7 +10,7 @@ import glob
 parser = argparse.ArgumentParser(description='Pseudo labeling')
 parser.add_argument('--results_dir', type=str, default='', help='directory to save results')
 parser.add_argument('--data_dir', type=str, default='', help='directory to save data')
-parser.add_argument('--dset', type=str, default='camelyon')
+parser.add_argument('--dset', type=str, choices=['camelyon', 'nsclc', 'rcc'], default='camelyon')
 parser.add_argument('--label_csv', type=str, default=None)
 parser.add_argument('--round', type=int, default=1)
 args = parser.parse_args()
@@ -45,28 +45,38 @@ if args.label_csv:
 
 
 patch_num = 10 * args.round
+num_classes = {'nsclc': 2, 'rcc':3}
 ## training set
 topmax_tumor = patch_num
 topmax_normal = patch_num
 topmin = patch_num
 train_dset_patch = {}
 for img_id, attn in train_attns.items():
-    if img_id.startswith('tumor'):
-        target = 1
-    else:
-        target = 0
-
-    ## bal
-    if args.round == 1:
-        attn = torch.from_numpy(attn).squeeze(0)
-        score = attn
-    else:
-        attn = torch.from_numpy(attn).squeeze(0)
-        preds = torch.from_numpy(train_preds[img_id])
-        preds = torch.transpose(preds, 1, 0)
-        preds = preds[target]
-        attn = (attn - torch.min(attn)) / (torch.max(attn) - torch.min(attn))
-        score = preds * attn
+    if args.dset == 'camelyon':
+        if img_id.startswith('tumor'):
+            target = 1
+        else:
+            target = 0
+    
+        if args.round == 1:
+            attn = torch.from_numpy(attn).squeeze(0)
+            score = attn
+        else:
+            attn = torch.from_numpy(attn).squeeze(0)
+            preds = torch.from_numpy(train_preds[img_id])
+            preds = torch.transpose(preds, 1, 0)
+            preds = preds[target]
+            attn = (attn - torch.min(attn)) / (torch.max(attn) - torch.min(attn))
+            score = preds * attn
+    elif args.dset == 'nsclc' or args.dset == 'rcc:
+        attn = torch.from_numpy(attn)    
+        attn = attn[slide_to_label[img_id]]
+        if args.round == 1:
+            score = attn
+        else:
+            preds = torch.from_numpy(train_preds[img_id])
+            preds = torch.transpose(preds, 1, 0)
+            score = preds[slide_to_label[img_id]] * attn
 
     h5py_path = os.path.join(args.data_dir, 'patches', img_id + '.h5')
     file = h5py.File(h5py_path, 'r')
@@ -77,24 +87,27 @@ for img_id, attn in train_attns.items():
     # patch_list = glob.glob(os.path.join('/mnt/MedImg/CAMELYON16/patch/clam20_256/img/', img_id, '*.jpg'))
     # patch_list = np.array(patch_list)
 
+    
+    _, topmax_id = torch.topk(score, k=topmax_tumor, dim=0)
+    _, topmin_id = torch.topk(-score, k=topmin, dim=0)
     if args.dset == 'camelyon':
-        _, topmax_id = torch.topk(score, k=topmax_tumor, dim=0)
-        _, topmin_id = torch.topk(-score, k=topmin, dim=0)
         label = [target] * topmax_id.size(0) + [0] * topmin_id.size(0)
+    elif args.dset == 'nsclc' or args.dset == 'rcc:
+        label = [slide_to_label[img_id]] * topmax_id.size(0) + [num_classes[args.dset] + 1] * topmin_id.size(0)
 
-        idx = topmax_id.tolist() + topmin_id.tolist()
-        topmax_id = topmax_id.numpy()
-        topmin_id = topmin_id.numpy()
+    idx = topmax_id.tolist() + topmin_id.tolist()
+    topmax_id = topmax_id.numpy()
+    topmin_id = topmin_id.numpy()
 
-        topmax_coords = coords[topmax_id].tolist()
-        topmin_coords = coords[topmin_id].tolist()
+    topmax_coords = coords[topmax_id].tolist()
+    topmin_coords = coords[topmin_id].tolist()
 
-        ### image path list
-        # topmax_coords = patch_list[topmax_id].tolist()
-        # topmin_coords = patch_list[topmin_id].tolist()
+    ### image path list
+    # topmax_coords = patch_list[topmax_id].tolist()
+    # topmin_coords = patch_list[topmin_id].tolist()
 
-        select_coords = topmax_coords + topmin_coords
-        # select_coords = topmax_coords
+    select_coords = topmax_coords + topmin_coords
+    # select_coords = topmax_coords
     train_dset_patch[img_id] = {'coords': select_coords, 'labels': label, 'idx': idx}
     #print('Finish ', img_id)
 
@@ -105,49 +118,60 @@ topmax_normal = patch_num
 topmin = patch_num
 val_dset_patch = {}
 for img_id, attn in val_attns.items():
-    if img_id.startswith('tumor'):
-        target = 1
-    else:
-        target = 0
-
-    if args.round == 1:
-        attn = torch.from_numpy(attn).squeeze(0)
-        score = attn
-    else:
-        attn = torch.from_numpy(attn).squeeze(0)
-        preds = torch.from_numpy(val_preds[img_id])
-        preds = torch.transpose(preds, 1, 0)
-        preds = preds[target]
-        attn = (attn - torch.min(attn)) / (torch.max(attn) - torch.min(attn))
-        score = preds * attn
+    if args.dset == 'camelyon':
+        if img_id.startswith('tumor'):
+            target = 1
+        else:
+            target = 0
+    
+        if args.round == 1:
+            attn = torch.from_numpy(attn).squeeze(0)
+            score = attn
+        else:
+            attn = torch.from_numpy(attn).squeeze(0)
+            preds = torch.from_numpy(val_preds[img_id])
+            preds = torch.transpose(preds, 1, 0)
+            preds = preds[target]
+            attn = (attn - torch.min(attn)) / (torch.max(attn) - torch.min(attn))
+            score = preds * attn
+    elif args.dset == 'nsclc' or args.dset == 'rcc:
+        attn = torch.from_numpy(attn)    
+        attn = attn[slide_to_label[img_id]]
+        if args.round == 1:
+            score = attn
+        else:
+            preds = torch.from_numpy(train_preds[img_id])
+            preds = torch.transpose(preds, 1, 0)
+            score = preds[slide_to_label[img_id]] * attn
 
     h5py_path = os.path.join(args.data_dir, 'patches', img_id + '.h5')
     file = h5py.File(h5py_path, 'r')
     coord_dset = file['coords']
     coords = np.array(coord_dset[:])
 
-
     ### if save image in .jpg format
     # patch_list = glob.glob(os.path.join('/mnt/MedImg/CAMELYON16/patch/clam20_256/img/', img_id, '*.jpg'))
     # patch_list = np.array(patch_list)
 
+    _, topmax_id = torch.topk(score, k=topmax_tumor, dim=0)
+    _, topmin_id = torch.topk(-score, k=topmin, dim=0)
     if args.dset == 'camelyon':
-        _, topmax_id = torch.topk(score, k=topmax_tumor, dim=0)
-        _, topmin_id = torch.topk(-score, k=topmin, dim=0)
         label = [target] * topmax_id.size(0) + [0] * topmin_id.size(0)
+    elif args.dset == 'nsclc' or args.dset == 'rcc:
+        label = [slide_to_label[img_id]] * topmax_id.size(0) + [num_classes[args.dset] + 1] * topmin_id.size(0)
 
-        idx = topmax_id.tolist() + topmin_id.tolist()
-        topmax_id = topmax_id.numpy()
-        topmin_id = topmin_id.numpy()
+    idx = topmax_id.tolist() + topmin_id.tolist()
+    topmax_id = topmax_id.numpy()
+    topmin_id = topmin_id.numpy()
 
-        topmax_coords = coords[topmax_id].tolist()
-        topmin_coords = coords[topmin_id].tolist()
+    topmax_coords = coords[topmax_id].tolist()
+    topmin_coords = coords[topmin_id].tolist()
 
-        ### image path list
-        # topmax_coords = patch_list[topmax_id].tolist()
-        # topmin_coords = patch_list[topmin_id].tolist()
+    ### image path list
+    # topmax_coords = patch_list[topmax_id].tolist()
+    # topmin_coords = patch_list[topmin_id].tolist()
 
-        select_coords = topmax_coords + topmin_coords
+    select_coords = topmax_coords + topmin_coords
     val_dset_patch[img_id] = {'coords': select_coords, 'labels': label, 'idx': idx}
 
 
