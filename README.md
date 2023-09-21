@@ -1,5 +1,7 @@
 # A Bayesian Collaborative Learning Framework for Whole-Slide Image Classification
 
+### Note: This repository will be temporarily closed until October 10, 2023.
+
 <img src="https://github.com/Zero-We/BCL/blob/main/docs/bcl_framework.png">
 
 
