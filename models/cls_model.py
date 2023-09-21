@@ -3,7 +3,7 @@ from models.resnet_custom import resnet50_baseline
 
 
 class BAL_P(nn.Module):
-    def __init__(self, input_dim=512, n_classes=6, k_sample=10, subtyping=False):
+    def __init__(self, input_dim=512, n_classes=6, subtyping=False):
         super(BAL_P, self).__init__()
         self.n_classes = n_classes
         fc_size = [input_dim, 1024, 256]
